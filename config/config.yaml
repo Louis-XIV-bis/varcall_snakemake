@@ -1,0 +1,21 @@
+ref_genome: 'resources/ref/S288C_reference_sequence_R64-4-1_20230830.fasta'
+tax_id: 4932
+rep_regions: 'resources/rep_regions/rep_regions_Scere.bed' 
+
+ENA_ID_get_gvcf:
+  - PRJNA396809
+  # - PRJNA247448
+  # - PRJNA260311
+  # - PRJNA303109
+  # - PRJNA315044
+  # - PRJNA504476
+  # - PRJNA186707
+
+ENA_ID_merge_gvcf:
+  - PRJNA396809
+  - PRJNA247448
+  - PRJNA260311
+  - PRJNA303109
+  - PRJNA315044
+  - PRJNA504476
+  # - PRJNA186707
