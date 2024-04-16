@@ -18,10 +18,10 @@ conda: "workflow/envs/environment.yaml"
 
 # Done by the Python script ran before this pipeline, we just read the list of IDs
 try:   
-    with open('results/table/ENA_strain_list.json', 'r') as file:
+    with open('results/tables_get_gvcf/ENA_strain_list.json', 'r') as file:
         ENA_strain_list = np.array(json.load(file))
 except FileNotFoundError:
-    raise FileNotFoundError("Please, make sure you ran the 'generate_table.py' script before that pipeline. If you did, the output file was not correctly created.")
+    raise FileNotFoundError("Please, make sure you ran the 'generate_table.py' script before that pipeline (python generate_tables.py get_gvcf). If you did, the output file was not correctly created.")
 
 localrules:
     all,
@@ -51,7 +51,7 @@ rule all:
 rule fastq_to_mergedbam:
     priority: 2
     input:
-        table="results/table/{ENA_strain}.csv",
+        table="results/tables_get_gvcf/{ENA_strain}.csv",
     output:
         merged_bam=temp("results/fastq_to_bam/{ENA_strain}_merged.bam"),
     params:

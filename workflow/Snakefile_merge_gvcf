@@ -10,6 +10,29 @@ with open("config/resources.yaml", "r") as f:
 
 conda: "workflow/envs/environment.yaml"
 
+############# Downloading, merging and filtering the information files #############
+# Download all the tsv files from the ENA IDs. They contain all the information
+# requiered for the rest of the pipeline (sample ID, ftp link to dl fastq, etc).
+# After that, it's merged into one unique file and filtered / processed (e.g. keep
+# only S.cere sequences). Then, a csv table is created for each ENA_strain ID from the table.
+
+# Done by the Python script ran before this pipeline, we just read the list of IDs
+try:   
+    with open('results/tables_merge_gvcf/ENA_strain_list.json', 'r') as file:
+        ENA_strain_list = np.array(json.load(file))
+except FileNotFoundError:
+    raise FileNotFoundError("Please, make sure you ran the 'generate_table.py' script before that pipeline (python generate_tables.py merge_gvcf). If you did, the output file was not correctly created.")
+
+localrules:
+    all,
+
+rule all: 
+    input:
+        "results/vcf/unfiltered_yeast_strains.vcf.gz",
+        "results/vcf/filtered_yeast_strains.vcf.gz",
+        "results/vcf/filtered_repremoved_yeast_strains.vcf",
+
+
 # Combine per sample gVCF into multi-sample gVCF using CombineGVCFs
 # (since we only produce gVCF w/ HaplotypeCaller it's OK tu use this tool).
 
@@ -123,7 +146,6 @@ rule filter_vcf:
 ############# Remove repeted regions #############
 # Remove repeted regions from the genome (see resources/README.md) 
 # for more info about the input file
-
 
 rule remove_rep_regions:
     priority: 12
