@@ -18,7 +18,9 @@ The main steps of the pipeline are:
 - converting gVCF to VCF with [gatk GenotypeGVCFs](https://gatk.broadinstitute.org/hc/en-us/articles/360037057852-GenotypeGVCFs)
 - removing repeated regions with [gatk VariantFiltration](https://gatk.broadinstitute.org/hc/en-us/articles/360037434691-VariantFiltration) and [vcftools](https://vcftools.github.io/index.html).
 
-The pipeline takes as input a list of **ENA IDs** for which you can get read files (*e.g.* https://www.ebi.ac.uk/ena/browser/view/PRJEB13017). Each time you add a new ENA ID to the config file and re-run the pipeline, it will add the new samples to the final VCF. It will only keeps as intermediate files the per strain gVCF in order not to have to generate them again for each new run of the pipeline. 
+The pipeline is separated in two pipelines: the first it for downloading the fastq and do the process to get the individual gVCFs, the second is to merge the individual gVCFs to obtain a filtered VCF. Both can (and have to) be run independantly. 
+
+The pipelines work with a list of **ENA IDs** as input, for which you can get read files (*e.g.* https://www.ebi.ac.uk/ena/browser/view/PRJEB13017). Both part of the pipeline take a list of ENA ID, that can be different, for instance if you want to get the gVCFs from a given ID but you already have all other gVCFs you want to merge them with. More details below. 
 
 Here is a representation of the pipeline:    
   
@@ -27,7 +29,7 @@ Here is a representation of the pipeline:
   
 ## System requirements
 
-The only requirement is to be on a SLURM HPC cluster and have a working install of [conda](https://www.anaconda.com/download/#linux) and [git](https://git-scm.com/downloads).
+The only requirement is to be on a SLURM HPC cluster (recommended, but local running is possible, commands are also given for that case) and have a working install of [conda](https://www.anaconda.com/download/#linux) and [git](https://git-scm.com/downloads).
 All tools necessary to run the pipeline are described in a conda environment file.  
 
 The species specific resources files have to be downloaded manually if not *S. cerevisiae*. 
@@ -38,14 +40,13 @@ These commands have to be run only once to setup the pipeline.
 
 #### Cloning the git repository
 ```
-git clone "https://gitlab.lisn.upsaclay.fr/lollivier/variant-calling-pipeline"
+git clone "https://github.com/Louis-XIV-bis/varcall_snakemake"
 cd variant-calling-pipeline
 ```
 
 #### Create the appropriate environment using the conda export file provided
 ```
 conda env create -f workflow/envs/environment.yaml -n your_env_name
-conda activate your_env_name 
 ```
 
 #### If SLURM : create your profile 
@@ -67,21 +68,40 @@ You can change the profile file according to your preferences.
 
 ### Running the pipeline
 
-In order to run the pipeline, you need to give some ENA IDs in the **config/config.yaml** file. If you want to add a new ENA ID, just add it to the existing ENA ID list. It will keep in storage the intermediate file not to have to run it again (only the new IDs and the merge of gVCF). If you remove some IDs from the list, the gVCF will still be on the storage but not used for the final VCF. 
+In order to run the pipeline, you need to give some ENA IDs in the **config/config.yaml** file:   
+- If you want to get gVCFs from a given list of ID, add them to **ENA_ID_get_gvcf** in the config file. If you already have the gVCFs from the ENA ID, remove it from the config file otherwise it will be generated again.  
+- If you want to merge the gVCFs from a given list of ENA ID (can be different from the first part, **as long as you have all the gVCFs for each ID**), add them to **ENA_ID_merge_gvcf** in the config file. 
+
 
 Each time you add a new ENA ID to the config file, you'll to run the next two commands in order (python -> snakemake).
 
+Before running any command, make sure to have your conda environment activated, you can use: 
+```
+conda activate your_env_name 
+```
+
 #### Generate intermediate files for the pipeline
 
-This script will download the metadata for each new ENA ID and format it to use in the pipeline.
+For the first part of the pipeline, this command will download the metadata for each ENA ID in the **ENA_ID_get_gvcf** config.  
+Note: the tables will be removed if you run again the pipeline (in order to avoid conflict) but you can find them in the **results/tables_get_gvcf** folder as long as you didn't run it again.
 
 ```
-python generate_tables.py
+python generate_tables.py get_gvcf
+```
+
+For the second part of the pipeline, this command will also download the metadata for each ENA ID in the **ENA_ID_merge_gvcf** config.  
+Note: the tables will be removed if you run again the pipeline (in order to avoid conflict) but you can find them in the **results/tables_merge_gvcf** folder as long as you didn't run it again.
+
+
+```
+python generate_tables.py merge_gvcf
 ```
 
 #### Run the pipeline
 
-The pipeline is made in a way to prioritize the jobs strain by strain. Then, for new ENA ID, it will run multiple strains in parallel for this new ID. That way, it prevents from keep in storage too much intermediate files (BAM, SAM, etc). Only final gVCF for each strain is kept.   
+The pipeline is made in a way to prioritize the jobs strain by strain. Then, for new ENA ID, it will run multiple strains in parallel for this new ID. That way, it prevents from keep in storage too much intermediate files (BAM, SAM, etc). Only final gVCF for each strain is kept for the first part. For the second part, only VCF are kept (filtered, unfiltered, etc) and the input gVCFs. 
+
+You can get the output in the **results/** folders.
 
 Follow the correct section if you want to run the pipeline on a SLURM HPC cluster (recommended) or on a local computer.   
 
@@ -89,13 +109,27 @@ The process will run in the background using **nohup** and **&**. You can see th
 
 ##### SLURM HPC cluster 
 
+To run the first part of the pipeline: 
 ```
-nohup snakemake --profile name_of_profile &
+nohup snakemake -s workflow/Snakefile_get_gvcf --profile name_of_profile &
 ```
+To second the first part of the pipeline: 
+```
+nohup snakemake -s workflow/Snakefile_merge_gvcf --profile name_of_profile &
+```
+
 ##### Local computer
 
+To run the first part of the pipeline: 
 ```
-nohup snakemake --resources mem_mb=64000 --cores 8 &
+nohup snakemake -s workflow/Snakefile_get_gvcf --resources mem_mb=64000 --cores 8 &
 ```
+
+To second the first part of the pipeline: 
+```
+nohup snakemake -s workflow/Snakefile_merge_gvcf --resources mem_mb=64000 --cores 8 &
+```
+
+
 Note: you can change the values for the RAM ad the number of core. You can also create a profile to specify more resources but you'd need to change the script for each rule.
 
