@@ -122,6 +122,7 @@ def process_table(results_dir, input_file: str, output_file: str, tax_id: int) -
     # Remove the commas and space that will cause issues when saving to csv
     df.replace(to_replace=',', value='-', regex=True, inplace=True)
     df.replace(to_replace=' ', value='_', regex=True, inplace=True)
+    df.replace(to_replace=':', value='_', regex=True, inplace=True)
 
     # Add a new column to tell if the reads are paired or single ends by counting
     # the number of fastq ftp links. Sometimes there are 3 files (single + paired),

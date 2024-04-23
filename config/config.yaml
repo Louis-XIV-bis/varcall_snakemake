@@ -3,14 +3,16 @@ tax_id: 4932
 rep_regions: 'resources/rep_regions/rep_regions_Scere.bed' 
 
 ENA_ID_get_gvcf:
-  - PRJNA396809
-  # - PRJNA247448
-  - PRJNA260311
+  - PRJNA264372
+  - PRJEB13332
+  - PRJEB14774
+  - PRJEB1871
+  # - PRJNA260311
   # - PRJNA303109
   # - PRJNA315044
   # - PRJNA504476
   # - PRJNA186707
 
 ENA_ID_merge_gvcf:
-  - PRJNA504476
+  # - PRJNA504476
   # - PRJNA186707
