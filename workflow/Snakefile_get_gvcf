@@ -222,37 +222,6 @@ rule mark_duplicates:
         "gatk MarkDuplicatesSpark -I {input} -O {output.bam} \
         -M {output.metrics} --create-output-bam-index > {log.stdout} 2> {log.stderr}"
 
-
-##############################################################################
-
-############# Summary statistics of the mapping #############
-# Compute summary stats on the mapping using
-# samtools flagstats and gatk CollectAlignmentSummaryMetrics.
-
-
-rule stats_mapping:
-    input:
-        "results/marked_duplicates/{ENA_strain}_sorted_marked.bam",
-    output:
-        sam="results/metrics/flagstat/{ENA_strain}_flagstat.txt",
-        gatk="results/metrics/gatk_alig/{ENA_strain}_gatk.txt",
-    params:
-        ref_genome=config["ref_genome"],
-        threads=resources["stats_mapping"]["cpu_tasks"],
-    threads: resources["stats_mapping"]["cpu_tasks"]
-    resources:
-        slurm_partition=resources["stats_mapping"]["partition"],
-        mem_mb=resources["stats_mapping"]["memory"],
-        tasks=resources["stats_mapping"]["tasks"],
-        cpus_per_task=resources["stats_mapping"]["cpu_tasks"],
-        jobname=resources["stats_mapping"]["jobname"],
-    log:
-        stdout="logs/stats_mapping_{ENA_strain}.stdout", stderr="logs/stats_mapping_{ENA_strain}.stderr"
-    shell:
-        "samtools flagstat -@ {params.threads} -O tsv {input} > {output.sam}; \
-        gatk CollectAlignmentSummaryMetrics -R {params.ref_genome} -I {input} -O {output.gatk} > {log.stdout} 2> {log.stderr}"
-
-
 ##############################################################################
 ############# Variant calling (BAM -> gVCF -> VCF) #############
 # Variant calling for each genome, stored into per strain gVCF files
