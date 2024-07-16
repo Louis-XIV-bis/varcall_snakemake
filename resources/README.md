@@ -19,13 +19,14 @@ It is possible for you tu use another file as long as it is in BED format and ha
 Two different repeated were used (combined into a unique one) present in the **rep_regions/init_files/** folder: 
 
 - From this paper: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4059241/ (supp data, 100nt folder), the chromosome names were change to match with the reference chromosome names  
-- From using RepeatMasker tool on the 
+- From using RepeatMasker tool on the reference genome
 
 From the 2 files in **init_file** folder, the following commands were used: 
 ```
-sort -k1,1 -k2,2n genome_repeatMasker_fromSam.fa.bed > genome_repeatMasker.sorted.bed  
-sort -k1,1 -k2,2n Position_uniquemap_Jubin2014.bed > Position_uniquemap_Jubin2014.sorted.bed  
-bedtools merge -i Position_uniquemap_Jubin2014.sorted.bed -i genome_repeatMasker.sorted.bed > rep_regions_Scere.bed  
+
+cat genome_repeatMasker_fromSam.fa.bed Position_uniquemap_Jubin2014.bed > combined.bed
+sort -k1,1 -k2,2n combined.bed > combined_sorted.bed
+bedtools merge -i combined_sorted.bed > ../rep_regions_Scere.bed 
 ```
 ## Note
 The commands assume that you have activated the associated conda environment (see main README.md).
