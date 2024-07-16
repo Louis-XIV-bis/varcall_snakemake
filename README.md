@@ -6,7 +6,7 @@ Snakemake variant calling pipeline for HPC
 This project is an analysis pipeline using [Snakemake](https://snakemake.readthedocs.io/en/stable/) for variant calling (initially for yeasts).
 This pipeline  specificity is to **merge same strains coming from the same paper into one individual**. Therefore, it may not apply to some species (such as humans). 
 
-The pipeline was developped for [SLURM](https://slurm.schedmd.com/documentation.html) based HPC cluster but can be run on any cluster infrastructure (or locally) if the parameters are changed accordingly. 
+The pipeline was developped for [SLURM](https://slurm.schedmd.com/documentation.html) based HPC cluster but can be run on any cluster infrastructure (or locally) if the parameters are changed accordingly.
 
 The main steps of the pipeline are:
 - downloading the fastq files from [ENA](https://www.ebi.ac.uk/ena/browser/home)
@@ -26,6 +26,7 @@ Here is a representation of the pipeline:
   
 ![Logo](/plot_readme/DAG_pipeline.png)
 
+It is possible (described below) to run the second pipeline for individual chromosome of every individual. After splitting the gVCFs from the first pipeline into per-chromosome gVCF, the **merge_gvcf**, **gvcf_to_vcf, **filter_vcf** and "remove_rep_regions** will be run in parallel for each chromosome (technical details below). You'll end up with as many VCF as you have chrosomomes in your species. It'll be up to you to merge these VCF into a single one if needed.  
   
 ## System requirements
 
@@ -99,13 +100,19 @@ python generate_tables.py merge_gvcf
 
 #### Run the pipeline
 
-The pipeline is made in a way to prioritize the jobs strain by strain. Then, for new ENA ID, it will run multiple strains in parallel for this new ID. That way, it prevents from keep in storage too much intermediate files (BAM, SAM, etc). Only final gVCF for each strain is kept for the first part. For the second part, only VCF are kept (filtered, unfiltered, etc) and the input gVCFs. 
+The pipeline is made in a way to prioritize the jobs strain by strain. Then, for new ENA ID, it will run multiple strains in parallel for this new ID. That way, it prevents from keep in storage too much intermediate files (BAM, SAM, etc). Only final gVCF for each strain is kept for the first part. For the second part, only VCF are kept (filtered, unfiltered, etc) and the input gVCFs. You will get the output in the **results/** folders.
 
-You can get the output in the **results/** folders.
 
 Follow the correct section if you want to run the pipeline on a SLURM HPC cluster (recommended) or on a local computer.   
 
-The process will run in the background using **nohup** and **&**. You can see the progress in the **nohup.out** generated file. 
+The process will run in the background using **nohup** and **&**. You can see the progress in the **nohup.out** generated file.
+
+**IMPORTANT**: If you think you computational resources won't be sufficient for the computation of the VCF, we implemented a possibility to split your gVCF by chrososome and then run the second part of the pipeline per chromosome. In order to split your gVCF into chromosome, you need to use the scripts in the **split_gvcf** folder. First: update the **split_single_gvcf.sh** file with your chromosome names and then run (for SLURM): 
+```
+./run_split_gvcf.sh ../results/gvcf/
+``` 
+
+It will creates a **split_gvcf** folder in the **results** folder with all the chromosome gVCF for ceach individuals. 
 
 ##### SLURM HPC cluster 
 
@@ -118,6 +125,8 @@ To second the first part of the pipeline:
 nohup snakemake -s workflow/Snakefile_merge_gvcf --profile name_of_profile &
 ```
 
+If you used the per-chromosome method change **Snakefile_merge_gvcf** to **Snakefile_merge_splitgvcf**
+
 ##### Local computer
 
 To run the first part of the pipeline: 
@@ -125,10 +134,12 @@ To run the first part of the pipeline:
 nohup snakemake -s workflow/Snakefile_get_gvcf --resources mem_mb=64000 --cores 8 &
 ```
 
-To second the first part of the pipeline: 
+To second the first part of the pipeline (resources to changes according to what's possible for you and the requierments of your data): 
 ```
 nohup snakemake -s workflow/Snakefile_merge_gvcf --resources mem_mb=64000 --cores 8 &
 ```
+
+If you used the per-chromosome method change **Snakefile_merge_gvcf** to **Snakefile_merge_splitgvcf**
 
 
 Note: you can change the values for the RAM ad the number of core. You can also create a profile to specify more resources but you'd need to change the script for each rule.
