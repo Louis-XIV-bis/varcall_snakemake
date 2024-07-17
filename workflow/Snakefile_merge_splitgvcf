@@ -186,7 +186,7 @@ rule remove_rep_regions:
         """
         bcftools view -h {input} > temp_{wildcards.contig}.vcf 2> {log.stderr}; \ 
         bedtools subtract -a {input} -b {params.rep_regions} >> temp_{wildcards.contig}.vcf 2>> {log.stderr}; \
+        tabix -p vcf temp_{wildcards.contig}.vcf; \ 
         bgzip -c temp_{wildcards.contig}.vcf > {output}; \ 
-        tabix -p vcf {output}; \ 
         rm temp_{wildcards.contig}.vcf
         """
